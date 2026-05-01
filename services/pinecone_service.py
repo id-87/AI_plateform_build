@@ -31,13 +31,17 @@ class PineconeService:
         if not vectors:
             return
 
-        self.index.upsert(vectors=vectors)
+        self.index.upsert(
+        vectors=vectors,
+        namespace="default"
+    )
 
     def query(self, embedding, top_k=5):
         results = self.index.query(
             vector=embedding,
             top_k=top_k,
-            include_metadata=True
+            include_metadata=True,
+            namespace="default"
         )
 
         return results.get("matches", [])
