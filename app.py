@@ -27,6 +27,11 @@ if st.button("🔄 Sync Drive"):
     # 🔍 DEBUG OUTPUT
     st.subheader("Debug Info")
     st.json(result)
+
+
+if st.button("📊 Check Pinecone"):
+    stats = ingestor.pinecone.index.describe_index_stats()
+    st.json(stats)
 # =========================
 # 💬 QUERY
 # =========================
