@@ -3,10 +3,7 @@ uvicorn
 python-dotenv
 google-api-python-client
 google-auth
-google-auth-oauthlib
-google-auth-httplib2
 pypdf
 sentence-transformers
 pinecone
 groq
-python-multipart

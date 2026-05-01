@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 from services.drive_service import DriveService
 from services.embedding_service import EmbeddingService
+from services.pinecone_service import PineconeService
 
 load_dotenv()
 
@@ -13,6 +14,7 @@ drive = DriveService()
 embedder = EmbeddingService()
 
 files = drive.list_files(FOLDER_ID)
+pinecone = PineconeService()
 
 for file in files:
     if file["mimeType"] not in ["application/pdf", "text/plain"]:
@@ -28,10 +30,19 @@ for file in files:
 
     chunks = embedder.chunk_text(text)
     embeddings = embedder.embed_texts(chunks)
-    files = drive.list_files(FOLDER_ID)
 
+    vectors = [
+        {
+            "id": f"{file['id']}_{i}",
+            "values": embeddings[i],
+            "metadata": {
+                "text": chunks[i],
+                "source": file["name"]
+            }
+        }
+        for i in range(len(chunks))
+    ]
 
-    print(f"Chunks: {len(chunks)} | Embeddings: {len(embeddings)}")
-print("FOLDER_ID:", FOLDER_ID)
-print("Files fetched:", files)
-print("Total files:", len(files))
+    pinecone.upsert(vectors)
+
+    print(f"Chunks: {len(chunks)} | Uploaded: {len(vectors)}")
