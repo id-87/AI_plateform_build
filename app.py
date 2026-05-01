@@ -31,7 +31,11 @@ if st.button("🔄 Sync Drive"):
 
 if st.button("📊 Check Pinecone"):
     stats = ingestor.pinecone.index.describe_index_stats()
-    st.json(stats)
+
+   
+    stats_dict = stats.to_dict() if hasattr(stats, "to_dict") else dict(stats)
+
+    st.json(stats_dict)
 # =========================
 # 💬 QUERY
 # =========================
