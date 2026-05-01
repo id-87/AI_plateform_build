@@ -15,46 +15,51 @@ class IngestService:
         self.embedder = EmbeddingService()
         self.pinecone = PineconeService()
         self.folder_id = os.getenv("GOOGLE_DRIVE_FOLDER_ID")
-
     def ingest(self):
-        files = self.drive.list_files(self.folder_id)
+        debug = {
+            "files_found": 0,
+            "files_processed": 0,
+            "chunks_uploaded": 0,
+            "errors": []
+        }
 
-        total_files = 0
-        total_chunks = 0
+        files = self.drive.list_files(self.folder_id)
+        debug["files_found"] = len(files)
 
         for file in files:
-            if file["mimeType"] not in ["application/pdf", "text/plain"]:
-                continue
+            try:
+                if file["mimeType"] not in ["application/pdf", "text/plain"]:
+                    continue
 
-            total_files += 1
-            print(f"Processing: {file['name']}")
+                debug["files_processed"] += 1
 
-            stream = self.drive.download_file(file["id"])
-            text = self.drive.extract_text(stream, file["mimeType"])
+                stream = self.drive.download_file(file["id"])
+                text = self.drive.extract_text(stream, file["mimeType"])
 
-            if not text:
-                continue
+                if not text:
+                    debug["errors"].append(f"No text: {file['name']}")
+                    continue
 
-            chunks = self.embedder.chunk_text(text)
-            embeddings = self.embedder.embed_texts(chunks)
+                chunks = self.embedder.chunk_text(text)
+                embeddings = self.embedder.embed_texts(chunks)
 
-            vectors = [
-                {
-                    "id": f"{file['id']}_{i}",
-                    "values": embeddings[i],
-                    "metadata": {
-                        "text": chunks[i],
-                        "source": file["name"]
+                vectors = [
+                    {
+                        "id": f"{file['id']}_{i}",
+                        "values": embeddings[i],
+                        "metadata": {
+                            "text": chunks[i],
+                            "source": file["name"]
+                        }
                     }
-                }
-                for i in range(len(chunks))
-            ]
+                    for i in range(len(chunks))
+                ]
 
-            self.pinecone.upsert(vectors)
+                self.pinecone.upsert(vectors)
 
-            total_chunks += len(vectors)
+                debug["chunks_uploaded"] += len(vectors)
 
-        return {
-            "files_processed": total_files,
-            "chunks_uploaded": total_chunks
-        }
+            except Exception as e:
+                debug["errors"].append(f"{file['name']} → {str(e)}")
+
+        return debug
