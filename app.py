@@ -22,9 +22,11 @@ if st.button("🔄 Sync Drive"):
     with st.spinner("Syncing Drive and updating embeddings..."):
         result = ingestor.ingest()
 
-    st.success(f"✅ Synced {result['files_processed']} files")
-    st.info(f"📊 Uploaded {result['chunks_uploaded']} chunks")
+    st.success("✅ Sync completed")
 
+    # 🔍 DEBUG OUTPUT
+    st.subheader("Debug Info")
+    st.json(result)
 # =========================
 # 💬 QUERY
 # =========================
